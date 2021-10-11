@@ -9,8 +9,8 @@
 #define PIN_COUNTER 2
 bool running = false;
 byte duty_cycle_converted;
-int32_t FREQUENCY = 10;
-const int CHUNK_SIZE = 50;
+int32_t FREQUENCY = 100;
+const int CHUNK_SIZE = 1000000;
 volatile bool detected_pulse = false;
 int counter = 0;
 int interruption_time = 1000; // ms
@@ -19,7 +19,7 @@ void run_pwm(float duty_cycle){
   /* Run PWM on a given pin at an input frequency and duty cycle.*/
   running = true;
   duty_cycle_converted = 255 * duty_cycle;
-  analogWrite(PIN_PWM, duty_cycle_converted);
+  pwmWrite(PIN_PWM, duty_cycle_converted);
 }
 
 void stop_pwm(){
