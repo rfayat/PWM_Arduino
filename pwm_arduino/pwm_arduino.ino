@@ -3,44 +3,54 @@
 */
 // Define the parameters
 #include <PWM.h>
+#include "serial_helpers.h"
 #define PIN_PWM 9
 #define PIN_RUNNING 8
 #define PIN_ENABLE 10
 #define PIN_COUNTER 2
 bool running = false;
-byte duty_cycle_converted;
-int32_t FREQUENCY = 100;
-const int CHUNK_SIZE = 1000000;
+bool received_parameters = false;
 volatile bool detected_pulse = false;
 int counter = 0;
-int interruption_time = 1000; // ms
+int i;
 
-void run_pwm(float duty_cycle){
+
+void run_pwm(byte duty_cycle){
   /* Run PWM on a given pin at an input frequency and duty cycle.*/
   running = true;
-  duty_cycle_converted = 255 * duty_cycle;
-  pwmWrite(PIN_PWM, duty_cycle_converted);
+  pwmWrite(PIN_PWM, duty_cycle);
 }
 
 void stop_pwm(){
   /* Stop pwm on the pwm pin.*/
-  //digitalWrite(PIN_PWM, LOW);
-  digitalWrite(PIN_PWM, 0);
+  digitalWrite(PIN_PWM, LOW);
   counter = 0;
   running = false;
 }
 
 void callback_input_counter(){
   detected_pulse = true;
-  Serial.print("tartiflette ");
 }
 
-void setup() {
-  Serial.begin(9600);
-  // PWM Pin
+void blink_running_led(){
+  for (i=0; i<10; i++){
+    digitalWrite(PIN_RUNNING, HIGH);
+    delay(100);
+    digitalWrite(PIN_RUNNING, LOW);
+    delay(100);
+  }
+}
+
+void setup_pin_pwm(int32_t frequency){
+  /* Setup of the PWM pin at a given frequency */
   InitTimersSafe();
-  bool success = SetPinFrequencySafe(PIN_PWM, FREQUENCY);
+  bool success = SetPinFrequencySafe(PIN_PWM, frequency);
   pinMode(PIN_PWM, OUTPUT);
+}
+
+void setup(){
+  //Serial.begin(9600);
+  //Serial.setTimeout(100);
   // Pin indicating if PWM is running
   pinMode(PIN_RUNNING, OUTPUT);
   // Enable pin
@@ -48,24 +58,33 @@ void setup() {
   // Counter pin
   pinMode(PIN_COUNTER, INPUT);
   attachInterrupt(digitalPinToInterrupt(PIN_COUNTER), callback_input_counter, FALLING);
-  // Stop pwm if it was running
-  stop_pwm();
+  // Blink the LED to confirm the arduino is ready for receiving the parameters
+  blink_running_led();
+  // Setup the PWM pin once the parameters are received
+  while (!received_parameters){
+    received_parameters = read_parameters();
+    delay(1);
+  }
+  delay(1000);
+  setup_pin_pwm(FREQUENCY);
+  stop_pwm();  // Stop pwm if it was running
+  blink_running_led(); // blink the running LED to confirm setup is done
 }
 
-void loop() {
+void pwm_loop_iteration(int chunk_size, byte duty_cycle, int interruption_time){
   if (detected_pulse){
     counter += 1;
     detected_pulse = false;
   }
-  if (counter >= CHUNK_SIZE){
+  if (chunk_size != 0 && counter >= chunk_size){
     stop_pwm();
     delay(interruption_time);
   }
 
   if (digitalRead(PIN_ENABLE)){
     if (!running){
-      // Run PWM
-      run_pwm(.5);
+      // Run PWM with the input duty cycle
+      run_pwm(duty_cycle);
     }
   }
   else {
@@ -73,4 +92,8 @@ void loop() {
   }
   digitalWrite(PIN_RUNNING, running);
   delay(1);
+}
+
+void loop(){
+  pwm_loop_iteration(CHUNK_SIZE, DUTY_CYCLE, INTERRUPTION_TIME);
 }
