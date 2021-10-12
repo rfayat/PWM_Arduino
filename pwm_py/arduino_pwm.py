@@ -38,9 +38,15 @@ class Arduino_PWM(serial.Serial):
 
         """
         super().__init__(*args, **kwargs)
-        # self.test_connection()
+        time.sleep(5.)
+        print(f"Connected to Arduino on port {self.name}")
         self.set_pwm_parameters(frequency=frequency, duty_cycle=duty_cycle,
                                 chunk_size=0, chunk_pause=1000)
+
+    @property
+    def available(self):
+        "Return a boolean indicating if any content is in the buffer."
+        return self.in_waiting > 0
 
     def write(self, data):
         "Convert data to bytes and write it via the serial port."
@@ -48,23 +54,14 @@ class Arduino_PWM(serial.Serial):
         super().write(formatted)
         print(f"Sent: {formatted}")
 
-    def write_readline(self, data):
-        "Write data on the serial port and return a response."
-        self.write(data)
-        time.sleep(1e-1)
-        answer = self.readline()
-        print(f"Received: {answer}")
-        return answer
-
-    def test_connection(self):
-        "Test the connection to the arduino and return a boolean."
-        try:
-            self.read()
-            print(f"Connected to Arduino on port {self.name}")
-            return True
-        except serial.serialutil.SerialException as err:
-            print(f"Connection to arduino failed:\n{err}")
-            return False
+    def readline(self):
+        "Read a line from the serial connection, return None if empty."
+        if self.available:
+            line = super().readline()
+            line = str(line)
+            return line.rstrip("\n")
+        else:
+            return None
 
     def set_pwm_parameters(self, frequency, duty_cycle,
                            chunk_size, chunk_pause):
@@ -83,13 +80,16 @@ class Arduino_PWM(serial.Serial):
 
 
 if __name__ == "__main__":
-    ser = Arduino_PWM("/dev/ttyACM0", timeout=.1)
+    ser = Arduino_PWM("/dev/ttyACM1", timeout=.1)
     try:
-        ser.test_connection()
-        s = str(input("Send something to the Arduino: "))
-        ser.write_readline(s)
+        ser.write("parameters\n10\n128\n40\n5000\n")
+        time.sleep(.1)
         while True:
-            time.sleep(1e-6)
+            line = ser.readline()
+            if line is not None:
+                print(f"Received {line}")
+            time.sleep(1.)
+
     except KeyboardInterrupt:
         print("Hit ctrl-C")
     finally:

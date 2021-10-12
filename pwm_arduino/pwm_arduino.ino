@@ -49,15 +49,15 @@ void setup_pin_pwm(int32_t frequency){
 }
 
 void setup(){
-  //Serial.begin(9600);
-  //Serial.setTimeout(100);
+  Serial.begin(9600);
+  Serial.setTimeout(100);
   // Pin indicating if PWM is running
   pinMode(PIN_RUNNING, OUTPUT);
   // Enable pin
   pinMode(PIN_ENABLE, INPUT_PULLUP);
   // Counter pin
   pinMode(PIN_COUNTER, INPUT);
-  attachInterrupt(digitalPinToInterrupt(PIN_COUNTER), callback_input_counter, FALLING);
+  attachInterrupt(digitalPinToInterrupt(PIN_COUNTER), callback_input_counter, RISING);
   // Blink the LED to confirm the arduino is ready for receiving the parameters
   blink_running_led();
   // Setup the PWM pin once the parameters are received

@@ -1,6 +1,12 @@
 #define PIN_RUNNING 8
 int i;
-String incoming;
+String header;
+bool received_parameters = false;
+int32_t FREQUENCY;  // Hz
+byte DUTY_CYCLE; // 0-255, 128 corresponds to a 50% duty cycle
+int CHUNK_SIZE;  // Number of PWM cycles before starting a pause
+int INTERRUPTION_TIME; // duration of the pauses, ms
+
 
 void blink_running_led(){
   for (i=0; i<10; i++){
@@ -25,10 +31,32 @@ void setup(){
   blink_running_led();
 }
 
-void loop(){
-  delay(100);
-  while (Serial.available()){
-    incoming = Serial.readStringUntil('\n');
-    write_string(incoming);
+bool read_parameters(){
+  if (Serial.available()){
+    header = Serial.readStringUntil('\n');
+    if (header == "parameters"){
+      FREQUENCY = Serial.readStringUntil('\n').toInt();
+      DUTY_CYCLE = Serial.readStringUntil('\n').toInt();
+      CHUNK_SIZE = Serial.readStringUntil('\n').toInt();
+      INTERRUPTION_TIME = Serial.readStringUntil('\n').toInt();
+      write_string("success");
+      blink_running_led();
+      return true;
+    }
+    else {
+      Serial.flush();
+      return false;
+    }
   }
+  else {
+    return false;
+  }
+}
+
+void loop(){
+  received_parameters = false;
+  while (!received_parameters){
+    received_parameters = read_parameters();
+  }
+  delay(100);
 }
