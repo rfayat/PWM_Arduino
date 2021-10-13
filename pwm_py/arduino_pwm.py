@@ -14,12 +14,12 @@ def check_success(f):
     def g(self, *args, **kwargs):
         "Run the wrapped method and return a boolean indicating success."
         f(self, *args, **kwargs)
-        time.sleep(.1)
+        time.sleep(1.)
         is_success = self.readline_last() == "success"
         if is_success:
-            print("Received 'success' via the serial port.")
+            print("Received 'success' via the serial port.\n")
         else:
-            print("Did NOT receive 'success' via the serial port.")
+            print("Did NOT receive 'success' via the serial port.\n")
         return is_success
 
     return g
@@ -66,8 +66,9 @@ class Arduino_PWM(serial.Serial):
         self.check_input_types()
         super().__init__(*args, **kwargs)
         time.sleep(3.)
-        print(f"Connected to Arduino on port {self.name}")
+        print(f"Connected to Arduino on port {self.name}\n")
         self.set_pwm_parameters()
+        time.sleep(1.)
 
     def check_input_types(self):
         "Make sure the user-provided PWM parameters are valid."
@@ -101,9 +102,12 @@ class Arduino_PWM(serial.Serial):
 
     def readline_last(self):
         "Return the value of the last line in the buffer."
-        while self.available:
-            last_line = self.readline()
-        return last_line
+        if self.available:
+            while self.available:
+                last_line = self.readline()
+            return last_line
+        else:
+            return None
 
     @check_success
     def set_pwm_parameters(self):
@@ -127,22 +131,20 @@ class Arduino_PWM(serial.Serial):
     def close(self):
         "Send a stop signal and close the serial connection."
         self.stop_pwm()
-        time.sleep(.1)
+        time.sleep(2.)
         super().close()
 
 
 if __name__ == "__main__":
     ser = Arduino_PWM("/dev/ttyACM0",
                       timeout=.1,
-                      frequency=10,
-                      chunk_size=20,
-                      chunk_pause=500)
+                      frequency=15,
+                      chunk_size=50,
+                      chunk_pause=3000)
+    ser.start_pwm()
     try:
         while True:
-            time.sleep(5.)
-            ser.start_pwm()
-            time.sleep(3.)
-            ser.stop_pwm()
+            time.sleep(.1)
 
     except KeyboardInterrupt:
         print("Hit ctrl-C")
