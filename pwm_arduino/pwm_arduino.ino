@@ -9,6 +9,7 @@
 #define PIN_ENABLE 10
 #define PIN_COUNTER 2
 bool running = false;
+bool order_computer = false;
 bool received_parameters = false;
 volatile bool detected_pulse = false;
 int counter = 0;
@@ -33,7 +34,7 @@ void callback_input_counter(){
 }
 
 void blink_running_led(){
-  for (i=0; i<10; i++){
+  for (i=0; i<5; i++){
     digitalWrite(PIN_RUNNING, HIGH);
     delay(100);
     digitalWrite(PIN_RUNNING, LOW);
@@ -65,23 +66,31 @@ void setup(){
     received_parameters = read_parameters();
     delay(1);
   }
-  delay(1000);
+  delay(100);
   setup_pin_pwm(FREQUENCY);
   stop_pwm();  // Stop pwm if it was running
   blink_running_led(); // blink the running LED to confirm setup is done
 }
 
 void pwm_loop_iteration(int chunk_size, byte duty_cycle, int interruption_time){
+  // Handle interruptions when enough pulses were detected
   if (detected_pulse){
     counter += 1;
     detected_pulse = false;
   }
-  if (chunk_size != 0 && counter >= chunk_size){
+  if (chunk_size != 0 && counter >= 2 * chunk_size){
     stop_pwm();
     delay(interruption_time);
   }
 
-  if (digitalRead(PIN_ENABLE)){
+  if (order_computer){
+    order_computer = !read_stop();
+  }
+  else {
+    order_computer = read_start();
+  }
+
+  if (digitalRead(PIN_ENABLE) && order_computer){
     if (!running){
       // Run PWM with the input duty cycle
       run_pwm(duty_cycle);

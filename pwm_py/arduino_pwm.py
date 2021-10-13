@@ -4,11 +4,33 @@ Author: Romain Fayat, October 2021
 """
 import serial
 import time
+from functools import wraps
 
 
-def format_data(data):
-    "Convert data to bytes after adding < and > around it."
-    return bytes(str(data), encoding="utf-8")
+def check_success(f):
+    "Add a check that the arduino sent feedback to a method."
+
+    @wraps(f)
+    def g(self, *args, **kwargs):
+        "Run the wrapped method and return a boolean indicating success."
+        f(self, *args, **kwargs)
+        time.sleep(.1)
+        is_success = self.readline_last() == "success"
+        if is_success:
+            print("Received 'success' via the serial port.")
+        else:
+            print("Did NOT receive 'success' via the serial port.")
+        return is_success
+
+    return g
+
+
+def check_object_type(obj, type):
+    "Check that obj is an instance of type and throws a ValueError if not."
+    try:
+        assert isinstance(obj, type)
+    except AssertionError:
+        raise ValueError("Input doesn't match expected type.")
 
 
 class Arduino_PWM(serial.Serial):
@@ -37,11 +59,26 @@ class Arduino_PWM(serial.Serial):
             Pause between PWM chunks if chunk_size != 0, in ms.
 
         """
+        self.frequency = frequency
+        self.duty_cycle = duty_cycle
+        self.chunk_size = chunk_size
+        self.chunk_pause = chunk_pause
+        self.check_input_types()
         super().__init__(*args, **kwargs)
-        time.sleep(5.)
+        time.sleep(3.)
         print(f"Connected to Arduino on port {self.name}")
-        self.set_pwm_parameters(frequency=frequency, duty_cycle=duty_cycle,
-                                chunk_size=0, chunk_pause=1000)
+        self.set_pwm_parameters()
+
+    def check_input_types(self):
+        "Make sure the user-provided PWM parameters are valid."
+        if not isinstance(self.frequency, int):
+            raise ValueError("frequency must be an integer.")
+        if not isinstance(self.duty_cycle, float) or self.duty_cycle < 0 or self.duty_cycle > 1:  # noqa 501
+            raise ValueError("duty_cycle must be a float between 0. and 1.")
+        if not isinstance(self.chunk_size, int):
+            raise ValueError("chunk_size must be an integer.")
+        if not isinstance(self.chunk_pause, int):
+            raise ValueError("chunk_pause must be an integer.")
 
     @property
     def available(self):
@@ -50,45 +87,62 @@ class Arduino_PWM(serial.Serial):
 
     def write(self, data):
         "Convert data to bytes and write it via the serial port."
-        formatted = format_data(data)
+        formatted = bytes(str(data), encoding="utf-8")
         super().write(formatted)
         print(f"Sent: {formatted}")
 
     def readline(self):
         "Read a line from the serial connection, return None if empty."
         if self.available:
-            line = super().readline()
-            line = str(line)
+            line = super().readline().decode("ascii")
             return line.rstrip("\n")
         else:
             return None
 
-    def set_pwm_parameters(self, frequency, duty_cycle,
-                           chunk_size, chunk_pause):
+    def readline_last(self):
+        "Return the value of the last line in the buffer."
+        while self.available:
+            last_line = self.readline()
+        return last_line
+
+    @check_success
+    def set_pwm_parameters(self):
         "Send the PWM parameters to the arduino."
         # Conversion of the duty cycle to a byte
-        duty_cycle_converted = int(duty_cycle * 255)
-        pass
+        duty_cycle_converted = int(self.duty_cycle * 255)
+        self.write(
+            f"parameters\n{self.frequency}\n{duty_cycle_converted}\n{self.chunk_size}\n{self.chunk_pause}\n"  # noqa E501
+        )
 
-    def start_pwm():
+    @check_success
+    def start_pwm(self):
         "Send the start order to the arduino."
-        pass
+        self.write("start\n")
 
-    def stop_pwm():
+    @check_success
+    def stop_pwm(self):
         "Send the stop signal to the arduino."
-        pass
+        self.write("stop\n")
+
+    def close(self):
+        "Send a stop signal and close the serial connection."
+        self.stop_pwm()
+        time.sleep(.1)
+        super().close()
 
 
 if __name__ == "__main__":
-    ser = Arduino_PWM("/dev/ttyACM1", timeout=.1)
+    ser = Arduino_PWM("/dev/ttyACM0",
+                      timeout=.1,
+                      frequency=10,
+                      chunk_size=20,
+                      chunk_pause=500)
     try:
-        ser.write("parameters\n10\n128\n40\n5000\n")
-        time.sleep(.1)
         while True:
-            line = ser.readline()
-            if line is not None:
-                print(f"Received {line}")
-            time.sleep(1.)
+            time.sleep(5.)
+            ser.start_pwm()
+            time.sleep(3.)
+            ser.stop_pwm()
 
     except KeyboardInterrupt:
         print("Hit ctrl-C")

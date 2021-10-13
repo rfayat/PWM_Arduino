@@ -6,13 +6,6 @@ int CHUNK_SIZE;  // Number of PWM cycles before starting a pause
 int INTERRUPTION_TIME; // duration of the pauses, ms
 String header;
 
-void write_string(String string){
-  for(auto c: string){
-    Serial.write(c);
-  }
-  Serial.write('\n');
-}
-
 bool read_parameters(){
   if (Serial.available()){
     header = Serial.readStringUntil('\n');
@@ -21,12 +14,12 @@ bool read_parameters(){
       DUTY_CYCLE = Serial.readStringUntil('\n').toInt();
       CHUNK_SIZE = Serial.readStringUntil('\n').toInt();
       INTERRUPTION_TIME = Serial.readStringUntil('\n').toInt();
-      Serial.write(DUTY_CYCLE);
-      write_string("success");
+      Serial.write("success\n");
       return true;
     }
     else {
       Serial.flush();
+      Serial.write("failure\n");
       return false;
     }
   }
@@ -35,5 +28,40 @@ bool read_parameters(){
   }
 }
 
+bool read_start(){
+  if (Serial.available()){
+    header = Serial.readStringUntil('\n');
+    if (header == "start"){
+      Serial.write("success\n");
+      return true;
+    }
+    else {
+      Serial.flush();
+      Serial.write("failure\n");
+      return false;
+    }
+  }
+  else {
+    return false;
+  }
+}
+
+bool read_stop(){
+  if (Serial.available()){
+    header = Serial.readStringUntil('\n');
+    if (header == "stop"){
+      Serial.write("success\n");
+      return true;
+    }
+    else {
+      Serial.flush();
+      Serial.write("failure\n");
+      return false;
+    }
+  }
+  else {
+    return false;
+  }
+}
 
 #endif
