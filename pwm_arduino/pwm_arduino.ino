@@ -22,7 +22,11 @@ void run_pwm(byte duty_cycle){
   pwmWrite(PIN_PWM, duty_cycle);
 }
 
-void stop_pwm(){
+void stop_pwm(int32_t frequency){
+  if (frequency != 0){
+    int half_period = 500 / FREQUENCY;
+    delay(half_period);
+  }
   /* Stop pwm on the pwm pin.*/
   digitalWrite(PIN_PWM, LOW);
   counter = 0;
@@ -68,7 +72,7 @@ void setup(){
   }
   delay(100);
   setup_pin_pwm(FREQUENCY);
-  stop_pwm();  // Stop pwm if it was running
+  stop_pwm(0);  // Stop pwm if it was running
   blink_running_led(); // blink the running LED to confirm setup is done
 }
 
@@ -78,8 +82,8 @@ void pwm_loop_iteration(int chunk_size, byte duty_cycle, int interruption_time){
     counter += 1;
     detected_pulse = false;
   }
-  if (chunk_size != 0 && counter >= 2 * chunk_size){
-    stop_pwm();
+  if (chunk_size != 0 && counter >= chunk_size){
+    stop_pwm(FREQUENCY);
     delay(interruption_time);
   }
 
@@ -97,7 +101,7 @@ void pwm_loop_iteration(int chunk_size, byte duty_cycle, int interruption_time){
     }
   }
   else {
-    stop_pwm();
+    stop_pwm(0);
   }
   digitalWrite(PIN_RUNNING, running);
   delay(1);
