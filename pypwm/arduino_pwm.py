@@ -9,7 +9,6 @@ from functools import wraps
 
 def check_success(f):
     "Add a check that the arduino sent feedback to a method."
-
     @wraps(f)
     def g(self, *args, **kwargs):
         "Run the wrapped method and return a boolean indicating success."
@@ -138,9 +137,9 @@ class Arduino_PWM(serial.Serial):
 if __name__ == "__main__":
     ser = Arduino_PWM("/dev/ttyACM0",
                       timeout=.1,
-                      frequency=15,
-                      chunk_size=50,
-                      chunk_pause=3000)
+                      frequency=1,
+                      chunk_size=10,
+                      chunk_pause=5000)
     ser.start_pwm()
     try:
         while True:
