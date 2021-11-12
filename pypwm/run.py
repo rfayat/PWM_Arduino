@@ -42,6 +42,10 @@ chunk_pause = args.chunk_pause
 if args.path_parameters is not None:
     with args.path_parameters.open("r") as json_file:
         json_params = json.load(json_file)
+    # Deals with imbricated json parameters
+    if "pwm" in json_params:
+        json_params = json_params["pwm"]
+    # Parse input parameters, keeping provided values as default
     port = json_params.get("port", port)
     frequency = int(json_params.get("frequency", frequency))
     duty_cycle = float(json_params.get("duty_cycle", duty_cycle))
