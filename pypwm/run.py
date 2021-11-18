@@ -7,6 +7,7 @@ from pathlib import Path
 import json
 import sys
 import time
+import signal
 from .arduino_pwm import Arduino_PWM
 
 # Argument parsing
@@ -61,16 +62,19 @@ if __name__ == "__main__":
                       chunk_size=chunk_size, chunk_pause=chunk_pause,
                       duty_cycle=duty_cycle)
 
-    # If test_connection is set to True, simply close the connexion and exit
-    if args.test_connection:
+    # Attach serial connection closing to interruption signal
+    def cleanup(*args):
+        "Close the serial connection."
+        global ser
         ser.close()
         sys.exit()
+
+    signal.signal(signal.SIGINT, cleanup)
+
+    # If test_connection is set to True, simply close the connexion and exit
+    if args.test_connection:
+        cleanup()
     ser.start_pwm()
-    try:
-        while True:
-            time.sleep(.1)
-    except KeyboardInterrupt:
-        print("Hit ctrl-C")
-    finally:
-        print("Cleaning up")
-        ser.close()
+
+    while True:
+        time.sleep(.1)

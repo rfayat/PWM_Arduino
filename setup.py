@@ -10,7 +10,7 @@ def read(fname):
 
 setup(
     name="pypwm",
-    version="0.1",
+    version="0.2",
     author="Romain Fayat",
     author_email="r.fayat@gmail.com",
     description=__doc__,
