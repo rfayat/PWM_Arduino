@@ -41,8 +41,8 @@ chunk_pause = args.chunk_pause
 
 # Read the toml and override the parameter values if provided in the toml
 if args.path_parameters is not None:
-    with args.path_parameters.open("r") as toml:
-        toml_params = toml.load(toml)
+    with args.path_parameters.open("r") as f:
+        toml_params = toml.load(f)
     # Deals with imbricated toml parameters
     if "pwm" in toml_params:
         toml_params = toml_params["pwm"]
