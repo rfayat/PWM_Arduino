@@ -14,7 +14,7 @@ setup(
     author="Romain Fayat",
     author_email="r.fayat@gmail.com",
     description=__doc__,
-    install_requires=["pyserial"],
+    install_requires=["pyserial", "toml"],
     packages=["pypwm"],
     long_description=read('README.md'),
 )

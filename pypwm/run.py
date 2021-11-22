@@ -4,7 +4,7 @@ Author: Romain FAYAT, November 2021
 """
 import argparse
 from pathlib import Path
-import json
+import toml
 import sys
 import time
 import signal
@@ -26,9 +26,9 @@ parser.add_argument("-p", "--chunk_pause", default=1000, type=int,
 parser.add_argument("--test_connection", const=True,
                     default=False, action="store_const",
                     help="Connect to the Arduino without running PWM.")
-parser.add_argument("--json", default=None, dest="path_parameters",
+parser.add_argument("--toml", default=None, dest="path_parameters",
                     help=("Path to an input parameter file. "
-                          "Values in the json override other inputs."),
+                          "Values in the toml override other inputs."),
                     type=lambda x: Path(x).expanduser())
 
 # Argument parsing
@@ -39,19 +39,19 @@ chunk_size = args.chunk_size
 duty_cycle = args.duty_cycle
 chunk_pause = args.chunk_pause
 
-# Read the json and override the parameter values if provided in the json
+# Read the toml and override the parameter values if provided in the toml
 if args.path_parameters is not None:
-    with args.path_parameters.open("r") as json_file:
-        json_params = json.load(json_file)
-    # Deals with imbricated json parameters
-    if "pwm" in json_params:
-        json_params = json_params["pwm"]
+    with args.path_parameters.open("r") as toml:
+        toml_params = toml.load(toml)
+    # Deals with imbricated toml parameters
+    if "pwm" in toml_params:
+        toml_params = toml_params["pwm"]
     # Parse input parameters, keeping provided values as default
-    port = json_params.get("port", port)
-    frequency = int(json_params.get("frequency", frequency))
-    duty_cycle = float(json_params.get("duty_cycle", duty_cycle))
-    chunk_size = int(json_params.get("chunk_size", chunk_size))
-    chunk_pause = int(json_params.get("chunk_pause", chunk_pause))
+    port = toml_params.get("port", port)
+    frequency = int(toml_params.get("frequency", frequency))
+    duty_cycle = float(toml_params.get("duty_cycle", duty_cycle))
+    chunk_size = int(toml_params.get("chunk_size", chunk_size))
+    chunk_pause = int(toml_params.get("chunk_pause", chunk_pause))
 
 # Add /dev at the beginning of the provided port if needed
 if not port.startswith("/dev"):
