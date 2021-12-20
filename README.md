@@ -23,6 +23,7 @@ $ python -m pypwm.run --help
 ## Arduino setup
 ### Dependencies and code upload
 Install the [Arduino PWM Frequency Library](https://code.google.com/archive/p/arduino-pwm-frequency-library/downloads) from your arduino IDE. This library is compatible with arduino Uno.
+To install it, download the zip file, extract it and place the directory `PWM` inside /path/to/Arduino/libraries/
 
 You can then upload the code in the repository's [pwm_arduino](pwm_arduino) folder to your arduino.
 
