@@ -5,6 +5,7 @@ Author: Romain Fayat, October 2021
 import serial
 import time
 from functools import wraps
+import logging
 
 
 def check_success(f):
@@ -16,9 +17,9 @@ def check_success(f):
         time.sleep(1.)
         is_success = self.readline_last() == "success"
         if is_success:
-            print("Received 'success' via the serial port.\n")
+            logging.warning("Received 'success' via the serial port.\n")
         else:
-            print("Did NOT receive 'success' via the serial port.\n")
+            logging.warning("Did NOT receive 'success' via the serial port.\n")
         return is_success
 
     return g
@@ -65,7 +66,7 @@ class Arduino_PWM(serial.Serial):
         self.check_input_types()
         super().__init__(*args, **kwargs)
         time.sleep(3.)
-        print(f"Connected to Arduino on port {self.name}\n")
+        logging.warning(f"Connected to Arduino on port {self.name}\n")
         self.set_pwm_parameters()
         time.sleep(1.)
 
@@ -89,7 +90,7 @@ class Arduino_PWM(serial.Serial):
         "Convert data to bytes and write it via the serial port."
         formatted = bytes(str(data), encoding="utf-8")
         super().write(formatted)
-        print(f"Sent: {formatted}")
+        logging.warning(f"Sent: {formatted}")
 
     def readline(self):
         "Read a line from the serial connection, return None if empty."
@@ -146,7 +147,7 @@ if __name__ == "__main__":
             time.sleep(.1)
 
     except KeyboardInterrupt:
-        print("Hit ctrl-C")
+        logging.warning("Hit ctrl-C")
     finally:
-        print("Cleaning up")
+        logging.warning("Cleaning up")
         ser.close()
