@@ -2,7 +2,7 @@
 Launch PWM on an arduino via a serial port using python
 
 
-## Python handling of the serial connexion
+## Python handling of the serial connexion
 Clone the repository and install the package as follows:
 ```bash
 $ https://github.com/rfayat/PWM_Arduino.git
@@ -27,7 +27,7 @@ To install it, download the zip file, extract it and place the directory `PWM` i
 
 You can then upload the code in the repository's [pwm_arduino](pwm_arduino) folder to your arduino.
 
-### Setting up the hardware
+### Setting up the hardware
 Circuit, for an arduino Uno:
 TODO: Add illustration
 
