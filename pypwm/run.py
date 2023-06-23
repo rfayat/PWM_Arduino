@@ -13,7 +13,7 @@ from .arduino_pwm import Arduino_PWM
 # Argument parsing
 parser = argparse.ArgumentParser(__doc__)
 parser.add_argument("-P", "--port", default="ttyACM0",
-                    help="Serial port the arduino is attached to, default: ttyACM0.")  # noqa E501
+                    help="Serial port the arduino is attached to, default: ttyACM0. (COMx for windows)")  # noqa E501
 parser.add_argument("-f", "--frequency", default=30, type=int,
                     help="PWM frequency in Herz, int, default: 30.")
 parser.add_argument("-c", "--chunk_size", default=0, type=int,
@@ -54,7 +54,9 @@ if args.path_parameters is not None:
     chunk_pause = int(toml_params.get("chunk_pause", chunk_pause))
 
 # Add /dev at the beginning of the provided port if needed
-if not port.startswith("/dev"):
+if sys.platform == "win32":
+    port = args.port
+elif not port.startswith("/dev"):
     port = "/dev/" + args.port
 
 if __name__ == "__main__":
